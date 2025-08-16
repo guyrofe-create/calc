@@ -1,9 +1,9 @@
 {
+  "id": "/",
   "name": "אפליקציה לנשים",
   "short_name": "מעקב נשים",
   "lang": "he",
   "dir": "rtl",
-  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
