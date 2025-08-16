@@ -1,8 +1,8 @@
 // sw.js — Service Worker
-const VERSION = 'v5';                 // העלה/י מספר כשיש שינוי נכסים
+const VERSION = 'v6';                 // העלה/י מספר כשיש שינוי נכסים
 const CACHE   = `app-cache-${VERSION}`;
 const CORE = [
-  '/',                                 // עוזר בחלק מההגדרות/דפדפנים
+  '/',
   '/index.html',
   '/manifest.json',
   '/icons/icon-192.png',
