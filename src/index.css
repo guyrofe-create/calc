@@ -8,26 +8,47 @@ body {
   background: #f7f7f7;
 }
 
-/* הבאנר העליון */
+/* באנר עליון לכל הרוחב עם תמיכה ב-notch */
 .top-banner {
-  position: sticky;         /* נשאר מודבק למעלה בגלילה */
+  position: sticky;         /* נשאר דבוק למעלה בגלילה */
   top: 0;
   z-index: 1000;
+
   display: flex;
   justify-content: center;
   align-items: center;
 
-  height: 64px;             /* גובה הכותרת */
+  height: 64px;             /* ניתן לשנות לפי הטעם */
   padding: max(env(safe-area-inset-top), 8px) 12px 8px;
   background: #fff;
   border-bottom: 1px solid #eaeaea;
 }
 
 .top-banner img {
-  max-height: 44px;         /* שלא יימתח אנכית */
-  height: auto;
+  max-height: 44px;         /* שלא ייחתך/יימתח אנכית */
   width: auto;
+  height: auto;
   object-fit: contain;
   user-select: none;
   pointer-events: none;
 }
+
+/* פס עדכון PWA (אם הפעלת pwa-update.js) */
+.pwa-update-bar{
+  position:fixed; left:16px; right:16px; bottom:16px; z-index:2000;
+  background:#111; color:#fff; padding:12px 14px; border-radius:12px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  box-shadow:0 12px 30px rgba(0,0,0,.2);
+}
+.pwa-update-text{ font-size:14px; }
+.pwa-update-actions{ display:flex; gap:8px; }
+.pwa-update-btn{
+  background:#00c2a8; color:#000; border:none; padding:8px 12px;
+  border-radius:999px; font-weight:700; cursor:pointer;
+}
+.pwa-update-btn:disabled{ opacity:.6; cursor:default; }
+.pwa-dismiss-btn{
+  background:transparent; color:#fff; border:1px solid #fff7;
+  padding:6px 10px; border-radius:999px; cursor:pointer;
+}
+.pwa-dismiss-btn:hover{ background:rgba(255,255,255,.08); }
