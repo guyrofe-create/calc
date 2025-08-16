@@ -1,11 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="he" dir="rtl">
   <head>
     <meta charset="utf-8" />
-
-    <!-- viewport עם safe areas ל-iOS -->
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- תצוגה + תמיכה ב-safe areas לאייפון -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
     <!-- iOS web app -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -22,13 +20,13 @@
     <title>אפליקציה לנשים</title>
   </head>
   <body>
-    <!-- (אופציונלי) באנר עליון עם לוגו: הוסף/י תמונה ל-public/assets/logo.png ועדכני את הנתיב -->
-    <div class="top-banner">
-      <img src="/assets/logo.png" alt="ד״ר גיא רופא">
-    </div>
+    <!-- באנר עליון מחוץ ל-React -->
+    <header id="banner" class="top-banner">
+      <img src="/assets/gr-logo.jpg" alt="ד״ר גיא רופא — ידע רפואי זה כוח למטופלים" decoding="async" />
+    </header>
 
+    <!-- האפליקציה -->
     <div id="root"></div>
-
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
