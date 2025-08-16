@@ -1,65 +1,33 @@
-/* src/index.css — התאמה ל-notch + באנר דביק בראש המסך */
-
-:root {
-  color-scheme: light dark;
-  /* safe-area ל-iOS */
-  --sat: env(safe-area-inset-top, 0px);
-  --sar: env(safe-area-inset-right, 0px);
-  --sab: env(safe-area-inset-bottom, 0px);
-  --sal: env(safe-area-inset-left, 0px);
-}
-
-*, *::before, *::after { box-sizing: border-box; }
-
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
 html, body, #root { height: 100%; }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, Arial, sans-serif;
+  font-family: system-ui, Arial, sans-serif;
   background: #f7f7f7;
-
-  /* קודם fallback לגרסאות iOS ישנות */
-  padding-top: constant(safe-area-inset-top);
-  padding-right: constant(safe-area-inset-right);
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-left: constant(safe-area-inset-left);
-
-  /* ואז env התקני */
-  padding-top: max(12px, var(--sat));
-  padding-right: var(--sar);
-  padding-bottom: var(--sab);
-  padding-left: var(--sal);
 }
 
-/* באנר עליון דביק עם מרווח בטוח ל-notch */
-.app-header {
-  position: sticky;
+/* הבאנר העליון */
+.top-banner {
+  position: sticky;         /* נשאר מודבק למעלה בגלילה */
   top: 0;
   z-index: 1000;
   display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 10px;
 
-  /* מרווח בטוח עליון */
-  padding-top: var(--sat);
-  /* גובה/מרווח הבאנר עצמו */
-  padding-bottom: 10px;
-  padding-inline: 14px;
-
-  background: #ffffff;
-  border-bottom: 1px solid #eee;
+  height: 64px;             /* גובה הכותרת */
+  padding: max(env(safe-area-inset-top), 8px) 12px 8px;
+  background: #fff;
+  border-bottom: 1px solid #eaeaea;
 }
 
-/* לוגו */
-.app-header img {
-  height: 28px; /* תרגישי חופשי לשנות */
-  display: block;
+.top-banner img {
+  max-height: 44px;         /* שלא יימתח אנכית */
+  height: auto;
+  width: auto;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
 }
-
-/* אם מוסיפים טקסט ליד הלוגו */
-.app-header-text { line-height: 1.2; }
-.app-title { font-weight: 700; font-size: 18px; }
-.app-sub { font-size: 12px; color: #8a8a8a; }
-
-/* עזרה למרכיבים קבועים בתחתית (כפתור התקנה וכו') */
-.safe-bottom { margin-bottom: var(--sab); }
