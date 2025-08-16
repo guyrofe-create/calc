@@ -1,7 +1,7 @@
-// public/sw.js — v3
-const CACHE = 'app-cache-v4';
+// SW: קאשינג נכסים + ניווט SPA אופליין + עדכון חלק
+const CACHE = 'app-cache-v4'; // עדכון גרסה לקאש בכל שינוי נכסים
 const CORE = [
-  '/',               // Netlify redirect ל-/index.html
+  '/',               // Netlify יעשה רידיירקט ל-/index.html
   '/index.html',
   '/manifest.json',
   '/icons/icon-192.png',
@@ -25,6 +25,7 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const { request } = e;
 
+  // ניווטי SPA – רשת קודם, ואם אין – index מהקאש
   if (request.mode === 'navigate') {
     e.respondWith(
       fetch(request).catch(async () => (await caches.open(CACHE)).match('/index.html'))
@@ -32,12 +33,14 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
+  // נכסים סטטיים
   const dest = request.destination;
   if (['style', 'script', 'image', 'font'].includes(dest) || request.url.includes('/assets/')) {
     e.respondWith(cacheFirst(request));
     return;
   }
 
+  // ברירת מחדל
   e.respondWith(
     fetch(request).catch(async () => (await caches.match(request)) || Response.error())
   );
@@ -55,12 +58,11 @@ async function cacheFirst(request) {
   return resp;
 }
 
+// הודעות מהאפליקציה
 self.addEventListener('message', (e) => {
   const d = e.data || {};
   if (d.type === 'SHOW') {
     self.registration.showNotification(d.title || 'תזכורת', { body: d.body || '' });
   }
-});
-self.addEventListener('message', (e) => {
-  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
+  if (d.type === 'SKIP_WAITING') self.skipWaiting();
 });
