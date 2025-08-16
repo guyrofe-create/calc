@@ -2,27 +2,72 @@
 <html lang="he" dir="rtl">
   <head>
     <meta charset="utf-8" />
-
-    <!-- viewport + תמיכה ב-safe areas ל-iOS -->
+    <!-- viewport עם תמיכה ב-safe areas ל-iOS -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-    <!-- iOS: ריצה כמו אפליקציה + סטטוס-בר כהה -->
+    <!-- iOS web app -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="אפליקציה לנשים" />
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#111111" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-
-    <!-- favicon בסיסי כדי למנוע 404 בקונסול -->
+    <!-- favicon כדי לסתום 404ים בקונסול -->
     <link rel="icon" href="/icons/icon-192.png" type="image/png" />
 
     <title>אפליקציה לנשים</title>
+
+    <!-- === GA4 (אופציונלי) ===
+         החליפי את G-XXXXXXXXXX במזהה שלך, או מחקי את הקטע כולו אם לא בשימוש. -->
+    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX', { 'anonymize_ip': true });
+    </script> -->
+    <!-- === סוף GA4 === -->
+    <style>
+      :root { color-scheme: light dark; }
+      * { box-sizing: border-box; }
+      html, body, #root { height: 100%; }
+      body { margin:0; font-family: system-ui, Arial, sans-serif; background:#f7f7f7; }
+    </style>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- רישום SW (אם לא קיים כבר אצלך בקוד) -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(reg => {
+            // אם יש גרסה ממתינה – בקשי לעדכן
+            if (reg.waiting) promptToReload(reg);
+
+            reg.addEventListener('updatefound', () => {
+              const newSW = reg.installing;
+              newSW && newSW.addEventListener('statechange', () => {
+                if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                  promptToReload(reg);
+                }
+              });
+            });
+          });
+        });
+
+        function promptToReload(reg) {
+          if (confirm('יש גרסה חדשה. לרענן עכשיו?')) {
+            reg.waiting && reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+        }
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
+        });
+      }
+    </script>
   </body>
 </html>
