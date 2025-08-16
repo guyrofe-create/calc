@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+
+    <!-- viewport + תמיכה ב-safe areas ל-iOS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!-- iOS: ריצה כמו אפליקציה + סטטוס-בר כהה -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="אפליקציה לנשים" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#111111" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- favicon בסיסי כדי למנוע 404 בקונסול -->
+    <link rel="icon" href="/icons/icon-192.png" type="image/png" />
+
+    <title>אפליקציה לנשים</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
