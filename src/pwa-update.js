@@ -1,13 +1,13 @@
-// מציג פס עדכון עם כפתור "עדכון עכשיו" כשיש Service Worker חדש
+// src/pwa-update.js
 export function setupPWAUpdate() {
   if (!('serviceWorker' in navigator)) return;
 
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then((reg) => {
-      // אם כבר מחכה עדכון
+      // אם יש כבר SW שממתין – הצג פס עדכון
       if (reg.waiting) showUpdateBar(reg);
 
-      // SW חדש נמצא
+      // מאזין לעדכונים חדשים
       reg.addEventListener('updatefound', () => {
         const sw = reg.installing;
         sw && sw.addEventListener('statechange', () => {
@@ -18,7 +18,7 @@ export function setupPWAUpdate() {
       });
     });
 
-    // אחרי SKIP_WAITING → ה־SW החדש שולט, טוענים מחדש
+    // כש-SW חדש תופס שליטה – מרעננים את הדף
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       window.location.reload();
     });
@@ -51,4 +51,3 @@ function showUpdateBar(reg) {
 
   document.body.appendChild(bar);
 }
-
