@@ -1,5 +1,5 @@
 // public/sw.js — v3
-const CACHE = 'app-cache-v3';
+const CACHE = 'app-cache-v4';
 const CORE = [
   '/',               // Netlify redirect ל-/index.html
   '/index.html',
