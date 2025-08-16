@@ -1,28 +1,34 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
   <head>
     <meta charset="utf-8" />
-    <!-- iOS safe areas -->
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!-- viewport עם safe areas ל-iOS -->
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!-- iOS web app -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#111111" />
+
+    <!-- אייקונים -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="icon" href="/icons/icon-192.png" type="image/png" />
 
     <title>אפליקציה לנשים</title>
   </head>
   <body>
-    <!-- כותרת עליונה: באנר לכל הרוחב -->
-    <header class="top-banner" role="banner" aria-label="ד״ר גיא רופא">
-      <img src="/assets/gr-logo.jpg" alt="ד״ר גיא רופא — ידע רפואי זה כוח למטופלים" decoding="async" />
-    </header>
+    <!-- (אופציונלי) באנר עליון עם לוגו: הוסף/י תמונה ל-public/assets/logo.png ועדכני את הנתיב -->
+    <div class="top-banner">
+      <img src="/assets/logo.png" alt="ד״ר גיא רופא">
+    </div>
 
-    <!-- האפליקציה -->
     <div id="root"></div>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
