@@ -1,16 +1,25 @@
-:root { color-scheme: light dark; }
+:root {
+  color-scheme: light dark;
+
+  /* משתנים ל-safe areas באייפון */
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
 
 body {
   margin: 0;
-  font-family: system-ui, Arial, sans-serif;
+  font-family: system-ui, -apple-system, Arial, sans-serif;
   background: #f7f7f7;
 }
 
-/* באנר עליון לכל הרוחב עם תמיכה ב-notch */
+/* כותרת עליונה: בלי height קבוע! משתמשים ב-min-height + padding לפי ה-notch */
 .top-banner {
-  position: sticky;         /* נשאר דבוק למעלה בגלילה */
+  position: sticky;         /* נשארת צמודה לראש בגלילה */
   top: 0;
   z-index: 1000;
 
@@ -18,14 +27,22 @@ body {
   justify-content: center;
   align-items: center;
 
-  height: 64px;             /* ניתן לשנות לפי הטעם */
-  padding: max(env(safe-area-inset-top), 8px) 12px 8px;
+  /* ריווח בטוח סביב הנוץ׳ והקצוות */
+  padding-top: calc(8px + var(--sat));
+  padding-right: calc(12px + var(--sar));
+  padding-bottom: 10px;
+  padding-left: calc(12px + var(--sal));
+
+  /* מבטיח גובה נעים אבל לא חותך את התוכן */
+  min-height: 64px;
+
   background: #fff;
   border-bottom: 1px solid #eaeaea;
 }
 
+/* תמונת הלוגו בבאנר */
 .top-banner img {
-  max-height: 44px;         /* שלא ייחתך/יימתח אנכית */
+  max-height: 44px;         /* מתאים לרוב המסכים; אפשר להעלות ל-48 אם תרצה */
   width: auto;
   height: auto;
   object-fit: contain;
@@ -33,7 +50,17 @@ body {
   pointer-events: none;
 }
 
-/* פס עדכון PWA (אם הפעלת pwa-update.js) */
+/* תמיכה ב-iOS ישן (constant) */
+@supports (padding: constant(safe-area-inset-top)) {
+  .top-banner {
+    padding-top: calc(8px + constant(safe-area-inset-top));
+    padding-right: calc(12px + constant(safe-area-inset-right));
+    padding-bottom: 10px;
+    padding-left: calc(12px + constant(safe-area-inset-left));
+  }
+}
+
+/* פס עדכון PWA (אם בשימוש) */
 .pwa-update-bar{
   position:fixed; left:16px; right:16px; bottom:16px; z-index:2000;
   background:#111; color:#fff; padding:12px 14px; border-radius:12px;
