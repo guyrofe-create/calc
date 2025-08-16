@@ -1,4 +1,65 @@
-:root { color-scheme: light dark; }
-* { box-sizing: border-box; }
+/* src/index.css — התאמה ל-notch + באנר דביק בראש המסך */
+
+:root {
+  color-scheme: light dark;
+  /* safe-area ל-iOS */
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
 html, body, #root { height: 100%; }
-body { margin: 0; font-family: system-ui, Arial, sans-serif; background: #f7f7f7; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Arial, sans-serif;
+  background: #f7f7f7;
+
+  /* קודם fallback לגרסאות iOS ישנות */
+  padding-top: constant(safe-area-inset-top);
+  padding-right: constant(safe-area-inset-right);
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-left: constant(safe-area-inset-left);
+
+  /* ואז env התקני */
+  padding-top: max(12px, var(--sat));
+  padding-right: var(--sar);
+  padding-bottom: var(--sab);
+  padding-left: var(--sal);
+}
+
+/* באנר עליון דביק עם מרווח בטוח ל-notch */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  /* מרווח בטוח עליון */
+  padding-top: var(--sat);
+  /* גובה/מרווח הבאנר עצמו */
+  padding-bottom: 10px;
+  padding-inline: 14px;
+
+  background: #ffffff;
+  border-bottom: 1px solid #eee;
+}
+
+/* לוגו */
+.app-header img {
+  height: 28px; /* תרגישי חופשי לשנות */
+  display: block;
+}
+
+/* אם מוסיפים טקסט ליד הלוגו */
+.app-header-text { line-height: 1.2; }
+.app-title { font-weight: 700; font-size: 18px; }
+.app-sub { font-size: 12px; color: #8a8a8a; }
+
+/* עזרה למרכיבים קבועים בתחתית (כפתור התקנה וכו') */
+.safe-bottom { margin-bottom: var(--sab); }
