@@ -5,6 +5,7 @@
 // Ovulation per spec: 14 days BEFORE next expected period; fertile window = −5..+1 days.
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { calculateFromInputs } from './calc.js';
 
 // Storage and notification keys (module scope to avoid re-creation on renders)
 
