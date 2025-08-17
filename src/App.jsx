@@ -202,7 +202,7 @@ function CalendarMonth(props){
     cells.push(iso);
   }
 
-  const today = toISO(new Date()));
+  const today = toISO(new Date());
   const col = '14.2857%';
   const baseCell = {
     boxSizing:'border-box',
