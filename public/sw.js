@@ -1,16 +1,14 @@
-// sw.js — Service Worker
-const VERSION = 'v6';                 // העלה/י מספר כשיש שינוי נכסים
-const CACHE   = `app-cache-${VERSION}`;
+/* SW בסיסי: קאש לנכסים + ניווט SPA אופליין + עדכון גרסה עם SKIP_WAITING */
+const CACHE = 'app-cache-v8';
 const CORE = [
-  '/',
   '/index.html',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
-  '/assets/gr-logo.jpg',               // הבאנר — לאופליין
+  '/assets/gr-logo.jpg',
 ];
 
-// התקנה: פרה-קאש + דלג המתנה
+// התקנה – קאש ל-CORE
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
@@ -19,22 +17,23 @@ self.addEventListener('install', (event) => {
   })());
 });
 
-// הפעלה: מחיקת קאש ישן + שליטה מיידית
+// אקטיבציה – ניקוי קאש ישן ו-claim
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.map(k => (k === CACHE ? null : caches.delete(k))));
+    await Promise.all(keys.map((k) => (k === CACHE ? null : caches.delete(k))));
     await self.clients.claim();
   })());
 });
 
-// ניווטים = רשת תחילה עם fallback ל-index.html, נכסים = cache-first
+// ניווטי SPA: רשת תחילה, ואם נכשלה – index.html מהקאש
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
-  const isHTML = req.mode === 'navigate' ||
-                 (req.headers.get('accept') || '').includes('text/html');
+  const isHTML =
+    req.mode === 'navigate' ||
+    (req.headers.get('accept') || '').includes('text/html');
 
   if (isHTML) {
     event.respondWith(networkFirstNavigation(req));
@@ -47,60 +46,38 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // ברירת מחדל: רשת ואם נכשלה – קאש
   event.respondWith(fetch(req).catch(() => caches.match(req)));
 });
 
-async function networkFirstNavigation(request) {
+async function networkFirstNavigation(req) {
   try {
-    return await fetch(request);
+    const fresh = await fetch(req);
+    return fresh;
   } catch {
     const cache = await caches.open(CACHE);
     return (await cache.match('/index.html')) || Response.error();
   }
 }
 
-async function cacheFirst(request) {
+async function cacheFirst(req) {
   const cache = await caches.open(CACHE);
-  const cached = await cache.match(request);
-  if (cached) {
+  const hit = await cache.match(req);
+  if (hit) {
     // רענון ברקע
-    fetch(request).then((resp) => {
-      if (resp && resp.ok) cache.put(request, resp.clone());
-    }).catch(() => {});
-    return cached;
+    fetch(req).then((r) => r.ok && cache.put(req, r.clone())).catch(() => {});
+    return hit;
   }
-  const resp = await fetch(request);
-  if (resp && resp.ok) cache.put(request, resp.clone());
+  const resp = await fetch(req);
+  if (resp.ok) cache.put(req, resp.clone());
   return resp;
 }
 
-// הודעות/עדכון
-self.addEventListener('message', (event) => {
-  const d = event.data || {};
-  if (d.type === 'SKIP_WAITING') self.skipWaiting();
+// הודעות/עדכון מידי
+self.addEventListener('message', (e) => {
+  const d = e.data || {};
   if (d.type === 'SHOW') {
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      event.waitUntil(
-        self.registration.showNotification(d.title || 'תזכורת', {
-          body: d.body || '',
-          icon: '/icons/icon-192.png',
-          badge: '/icons/icon-192.png',
-          dir: 'rtl',
-        })
-      );
-    }
+    self.registration.showNotification(d.title || 'תזכורת', { body: d.body || '' });
   }
-});
-
-// לחיצה על התראה: פתח/פקס חלון קיים
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil((async () => {
-    const clientsArr = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    if (clientsArr.length) {
-      clientsArr[0].focus();
-    } else {
-      await self.clients.openWindow('/');
-    }
-  })());
+  if (d.type === 'SKIP_WAITING') self.skipWaiting();
 });
