@@ -1,8 +1,8 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
   <head>
     <meta charset="utf-8" />
-    <!-- תצוגה + תמיכה ב-safe areas לאייפון -->
+    <!-- תמיכה ב-safe areas ב-iOS -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
     <!-- iOS web app -->
@@ -12,20 +12,45 @@
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#111111" />
-
-    <!-- אייקונים -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="icon" href="/icons/icon-192.png" type="image/png" />
 
     <title>אפליקציה לנשים</title>
+
+    <style>
+      :root { color-scheme: light dark; }
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body, #root { height: 100%; }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+        background: #f7f7f7;
+        /* ריווח מהנוץ' אם יש */
+        padding-top: env(safe-area-inset-top);
+      }
+      /* באנר עליון עם הלוגו */
+      .top-brand {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background: #fff;
+        border-bottom: 1px solid rgba(0,0,0,.06);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
+      }
+      .top-brand img {
+        height: 28px; /* הקטן/י אם צריך */
+        display: block;
+      }
+    </style>
   </head>
   <body>
-    <!-- באנר עליון מחוץ ל-React -->
-    <header id="banner" class="top-banner">
-      <img src="/assets/gr-logo.jpg" alt="ד״ר גיא רופא — ידע רפואי זה כוח למטופלים" decoding="async" />
-    </header>
+    <div class="top-brand">
+      <img src="/assets/gr-logo.jpg" alt="ד״ר גיא רופא">
+    </div>
 
-    <!-- האפליקציה -->
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
