@@ -24,6 +24,17 @@ function Pill(props) {
     </button>
   );
 }
+
+function Field(props) {
+  return (
+    <label style={styles.field} dir="rtl">
+      <div style={{ minWidth: 120, textAlign: 'right' }}>{props.label}</div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1 }}>{props.children}</div>
+    </label>
+  );
+}
+
+/** כפתור 📅 שמפעיל בורר תאריך מקומי (כולל iOS) ומחזיר ISO ל-onPick */
 function DatePickerButton({ value, onPick }) {
   const ref = useRef(null);
   const open = () => {
@@ -51,22 +62,14 @@ function DatePickerButton({ value, onPick }) {
   );
 }
 
-function Field(props) {
-  return (
-    <label style={styles.field} dir="rtl">
-      <div style={{ minWidth: 120, textAlign: 'right' }}>{props.label}</div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1 }}>{props.children}</div>
-    </label>
-  );
-}
-
 var styles = {
   app: { maxWidth: 880, margin: '0 auto', padding: 16, background: '#f7f7f7', direction: 'rtl', fontFamily: 'system-ui, Arial' },
   tabRow: { display: 'flex', gap: 8, justifyContent: 'flex-start', marginBottom: 10 },
   section: { margin: '10px 0', padding: 12, background: '#fff', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.04)' },
   input: { background: '#eee', borderRadius: 10, padding: 10, border: '1px solid #ddd' },
   button: { background: '#111', color: '#fff', padding: '10px 14px', borderRadius: 12, border: 'none', cursor: 'pointer', fontWeight: 700 },
-  iconBtn: { background:'#eee', border:'1px solid #ddd', borderRadius:10, padding:'10px 12px', cursor:'pointer' },  smallDanger: { background: 'tomato', color: '#fff', border: 'none', borderRadius: 10, padding: '4px 8px', cursor: 'pointer' },
+  iconBtn: { background:'#eee', border:'1px solid #ddd', borderRadius:10, padding:'10px 12px', cursor:'pointer' },
+  smallDanger: { background: 'tomato', color: '#fff', border: 'none', borderRadius: 10, padding: '4px 8px', cursor: 'pointer' },
   row: { display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', padding: '6px 0' },
   pill: { padding: '8px 14px', borderRadius: 999, border: 'none', cursor: 'pointer', fontWeight: 600 },
   field: { display: 'flex', gap: 8, alignItems: 'center', margin: '4px 0' },
@@ -148,7 +151,7 @@ function detectOvulationFromBBT(logs) {
   return null;
 }
 
-// Expanded plan (condensed)
+// Expanded plan (condensed; will be replaced by full JSON from the slide deck)
 const DEFAULT_PREG_CHECKS = [
   { title: 'אולטרסאונד מוקדם ואישור דופק', weeksLabel: 'שבוע 6–7', startWeek: 6, endWeek: 7, coverage: 'ממומן', tips: ['CRL לקביעת גיל הריון'] },
   { title: 'בדיקות דם פתיחה', weeksLabel: 'שבוע 6–10', startWeek: 6, endWeek: 10, coverage: 'ממומן', tips: ['ספירת דם, סוג דם/NAT, סוכר בצום, שתן כללית/תרבית', 'סרולוגיות: HIV, HBsAg, VDRL'] },
@@ -167,6 +170,7 @@ const DEFAULT_PREG_CHECKS = [
 function parseWeeksLabelToRange(label){
   if (!label) return {startWeek:0,endWeek:0};
   var t = String(label).replace(/–|—/g,'-');
+  // pull tokens like 13 or 13+6
   var tokens = (t.replace(/[^0-9+]/g,' ').split(' ').filter(Boolean));
   var tok1 = tokens[0] || '0';
   var tok2 = tokens[1] || tok1;
@@ -275,19 +279,6 @@ export default function App() {
   const [bbtC, setBbtC] = useState('');
   const [lmp, setLmp] = useState('');
 
-  // --- NEW: states for ovulation calculator (date picker + text + result) ---
-  const [ovLmpDate, setOvLmpDate] = useState('');
-  const [ovLmpText, setOvLmpText] = useState('');
-  const [ovCycle, setOvCycle] = useState(28);
-  const [ovRes, setOvRes] = useState(null);
-  const [ovError, setOvError] = useState('');
-
-  // --- NEW: states for pregnancy calculator (date picker + text + result) ---
-  const [pregDateInput, setPregDateInput] = useState('');
-  const [pregTextInput, setPregTextInput] = useState('');
-  const [pregRes, setPregRes] = useState(null);
-  const [pregError, setPregError] = useState('');
-
   // Calendar / chart state
   const todayISO = toISO(new Date());
   const [viewYM, setViewYM] = useState(()=>{ const d=new Date(); return {year:d.getUTCFullYear(), month:d.getUTCMonth()+1}; });
@@ -301,7 +292,7 @@ export default function App() {
     const cl = Number(settings.avgCycleLength)||28;
     const ovul = new Set();
     const fertile = new Set();
-    for (let k=-6; k<18; k++) {
+    for (let k=-6; k<18; k++) { // מעט אחורה והרבה קדימה
       const ov = addDaysISO(settings.lastPeriodStart, (k+1)*cl - 14);
       ovul.add(ov);
       const st = addDaysISO(ov, -5), en = addDaysISO(ov, 1);
@@ -322,11 +313,11 @@ export default function App() {
     setLogs(ls); setSettings(cs); setNotifEnabled(ne);
     if (cs.lastPeriodStart) setLmp(cs.lastPeriodStart);
     if (Array.isArray(pc) && pc.length) setPregChecks(pc);
-    setOvCycle(Number(cs.avgCycleLength)||28);
   } catch {} },[]);
   // Persist
   useEffect(()=>{ try { localStorage.setItem(K_LOGS, JSON.stringify(logs)); } catch {} },[logs]);
   useEffect(()=>{ try { localStorage.setItem(K_SETTINGS, JSON.stringify(settings)); } catch {} },[settings]);
+  
 
   const fertile = useMemo(()=> isISODate(settings.lastPeriodStart) ? calcFertileWindow(settings.lastPeriodStart, Number(settings.avgCycleLength)||28) : null, [settings]);
   const detectedOvul = useMemo(()=> detectOvulationFromBBT(logs), [logs]);
@@ -340,7 +331,7 @@ export default function App() {
 
   // Notifications check (at-app-open)
   useEffect(()=>{ dailyCheckNotifications(); }, [settings, lmp, logs, notifEnabled, detectedOvul]);
-  // Periodic foreground checks
+  // Periodic foreground checks (while הטאב פתוח)
   useEffect(()=>{ const id = window.setInterval(()=> dailyCheckNotifications(), 60*60*1000); return ()=> clearInterval(id); }, [settings, lmp, logs, notifEnabled, detectedOvul, pregChecks]);
   // Detect existing SW
   useEffect(()=>{ if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistration().then(r=> setSwReady(!!r)); } },[]);
@@ -379,9 +370,10 @@ self.addEventListener('message', e=>{ const d=e.data||{}; if(d.type==='SHOW'){ s
     }catch{ alert('כשל בהפעלת רקע'); }
   }
 
+  // Create and attach a minimal Web App Manifest at runtime
   function ensureManifest(){
     try{
-      const icon = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wn8X3IAAAAASUVORK5CYII=';
+      const icon = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wn8X3IAAAAASUVORK5CYII='; // 1x1 png
       const manifest = {
         name: 'אפליקציה לנשים', short_name: 'מעקב נשים', lang:'he', dir:'rtl',
         start_url: '.', display: 'standalone', background_color:'#ffffff', theme_color:'#111111',
@@ -424,25 +416,6 @@ self.addEventListener('message', e=>{ const d=e.data||{}; if(d.type==='SHOW'){ s
     } catch (e) { alert('כשל ביצוא CSV'); }
   }
 
-  // --- NEW: calculators handlers using calc.js ---
-  function onCalcOvulation(){
-    const raw = (ovLmpDate || ovLmpText || settings.lastPeriodStart || '').trim();
-    const cyc = Math.min(45, Math.max(21, parseInt(ovCycle,10) || parseInt(settings.avgCycleLength,10) || 28));
-    const out = calculateFromInputs(raw, cyc);
-    if (out.error) { setOvError(out.error); setOvRes(null); return; }
-    setOvError(''); setOvRes(out);
-    // סנכרון לוגיקת האפליקציה הקיימת
-    setSettings(s => ({ ...s, lastPeriodStart: out.lmp, avgCycleLength: cyc }));
-  }
-
-  function onCalcPregnancy(){
-    const raw = (pregDateInput || pregTextInput || lmp || '').trim();
-    const out = calculateFromInputs(raw, Number(settings.avgCycleLength)||28);
-    if (out.error) { setPregError(out.error); setPregRes(null); return; }
-    setPregError(''); setPregRes(out);
-    setLmp(out.lmp); // כדי שהתכנית תתעדכן
-  }
-
   return (
     <div style={styles.app}>
       <div style={styles.tabRow} dir="rtl">
@@ -464,7 +437,18 @@ self.addEventListener('message', e=>{ const d=e.data||{}; if(d.type==='SHOW'){ s
                 <span>ימים</span>
               </Field>
               <Field label="וסת אחרונה">
-                <input placeholder="yyyy-mm-dd או dd.mm.yyyy" value={settings.lastPeriodStart||''} onChange={e=>{ const iso=normalizeUserDate(e.target.value); setSettings(s=>({...s, lastPeriodStart: iso || e.target.value})); }} style={styles.input} />
+                <div style={{ display:'flex', gap:8, alignItems:'center', flex:1 }}>
+                  <input
+                    placeholder="yyyy-mm-dd או dd.mm.yyyy"
+                    value={settings.lastPeriodStart||''}
+                    onChange={e=>{ const iso=normalizeUserDate(e.target.value); setSettings(s=>({...s, lastPeriodStart: iso || e.target.value})); }}
+                    style={styles.input}
+                  />
+                  <DatePickerButton
+                    value={settings.lastPeriodStart||''}
+                    onPick={(iso)=> setSettings(s=>({...s, lastPeriodStart: iso}))}
+                  />
+                </div>
               </Field>
             </div>
           </Section>
@@ -540,29 +524,30 @@ self.addEventListener('message', e=>{ const d=e.data||{}; if(d.type==='SHOW'){ s
           <Section title="מחשבון ביוץ">
             <div style={{ display:'grid', gap:8 }}>
               <Field label="וסת אחרונה">
-                <input type="date" value={ovLmpDate} onChange={e=>setOvLmpDate(e.target.value)} style={styles.input} />
-                <input placeholder="YYYY-MM-DD או 17/08/2025 או 17082025" value={ovLmpText} onChange={e=>setOvLmpText(e.target.value)} style={styles.input} />
+                <div style={{ display:'flex', gap:8, alignItems:'center', flex:1 }}>
+                  <input
+                    placeholder="yyyy-mm-dd או dd.mm.yyyy"
+                    value={settings.lastPeriodStart||''}
+                    onChange={e=>{ const iso=normalizeUserDate(e.target.value); setSettings(s=>({...s, lastPeriodStart: iso || e.target.value})); }}
+                    style={styles.input}
+                  />
+                  <DatePickerButton
+                    value={settings.lastPeriodStart||''}
+                    onPick={(iso)=> setSettings(s=>({...s, lastPeriodStart: iso}))}
+                  />
+                </div>
               </Field>
               <Field label="אורך מחזור">
-                <input type="number" min={21} max={45} value={String(ovCycle)} onChange={e=>setOvCycle(e.target.value)} style={styles.input} />
+                <input type="number" value={String(settings.avgCycleLength)} onChange={e=>setSettings(s=>({...s, avgCycleLength:Number(e.target.value||0)}))} style={styles.input} />
                 <span>ימים</span>
               </Field>
-              <div style={{ display:'flex', gap:8 }}>
-                <button style={styles.button} onClick={onCalcOvulation}>חשב/י</button>
-                <button style={styles.button} onClick={()=>{ setOvLmpDate(''); setOvLmpText(''); setOvRes(null); setOvError(''); }}>נקה</button>
-              </div>
-              {ovError && <div style={{ color:'tomato' }}>{ovError}</div>}
-              {ovRes && (()=> {
-                const parts = String(ovRes.fertile||'–').split('–');
-                const fs = parts[0]||'', fe = parts[1]||'';
-                return (
-                  <div style={{ display:'grid', gap:6 }}>
-                    <div>{'חלון פורה: ' + fs + ' עד ' + fe}</div>
-                    <div>{'ביוץ משוער: ' + ovRes.ovulation}</div>
-                    {detectedOvul && (<div>{'זוהתה עליית BBT שמרמזת על ביוץ סביב: ' + detectedOvul}</div>)}
-                  </div>
-                );
-              })()}
+              {isISODate(settings.lastPeriodStart) ? (()=>{ const fw = fertile || calcFertileWindow(settings.lastPeriodStart, Number(settings.avgCycleLength)||28); return (
+                <div style={{ display:'grid', gap:6 }}>
+                  <div>{'חלון פורה: ' + fw.start + ' עד ' + fw.end}</div>
+                  <div>{'ביוץ משוער: ' + fw.ovulation}</div>
+                  {detectedOvul && (<div>{'זוהתה עליית BBT שמרמזת על ביוץ סביב: ' + detectedOvul}</div>)}
+                </div>
+              ); })() : <div>הזיני תאריך וסת אחרונה.</div>}
             </div>
           </Section>
         </div>
@@ -570,27 +555,17 @@ self.addEventListener('message', e=>{ const d=e.data||{}; if(d.type==='SHOW'){ s
 
       {tab==='pregnancy' && (
         <div>
-          <Section title="מחשבון הריון + תכנית">
+          <Section title="תכנית הריון אישית">
             <div style={{ display:'grid', gap:8 }}>
-              <Field label="וסת אחרונה">
-                <input type="date" value={pregDateInput} onChange={e=>setPregDateInput(e.target.value)} style={styles.input} />
-                <input placeholder="YYYY-MM-DD או 17/08/2025 או 17082025" value={pregTextInput} onChange={e=>setPregTextInput(e.target.value)} style={styles.input} />
-              </Field>
-              <div style={{ display:'flex', gap:8 }}>
-                <button style={styles.button} onClick={onCalcPregnancy}>חשב/י</button>
-                <button style={styles.button} onClick={()=>{ setPregDateInput(''); setPregTextInput(''); setPregRes(null); setPregError(''); }}>נקה</button>
+              <div style={{ display:'flex', gap:8, alignItems:'center', flex:1 }}>
+                <input
+                  placeholder="yyyy-mm-dd או dd.mm.yyyy"
+                  value={lmp}
+                  onChange={e=>{ const iso=normalizeUserDate(e.target.value); setLmp(iso || e.target.value); }}
+                  style={styles.input}
+                />
+                <DatePickerButton value={lmp} onPick={(iso)=> setLmp(iso)} />
               </div>
-              {pregError && <div style={{ color:'tomato' }}>{pregError}</div>}
-              {pregRes && (
-                <div style={{ display:'grid', gap:6 }}>
-                  <div>{'תאריך לידה משוער (EDD): ' + pregRes.due}</div>
-                  <div>{'גיל הריון להיום: ' + pregRes.ga}</div>
-                </div>
-              )}
-
-              {/* תכנית ההריון המקורית המבוססת על lmp (מעודכן אחרי חישוב) */}
-              <div style={{ marginTop:10 }} />
-              <input placeholder="yyyy-mm-dd או dd.mm.yyyy" value={lmp} onChange={e=>{ const iso=normalizeUserDate(e.target.value); setLmp(iso || e.target.value); }} style={styles.input} />
               {isISODate(lmp) ? (()=>{ const plan=pregPlan; return (
                 <div style={{ display:'grid', gap:6 }}>
                   <div>{'תאריך לידה משוער (EDD): ' + plan.edd}</div>
@@ -628,6 +603,7 @@ self.addEventListener('message', e=>{ const d=e.data||{}; if(d.type==='SHOW'){ s
     console.assert(fw26.start === '2025-01-08' && fw26.end === '2025-01-14', '26d window should be 8–14 Jan');
     const ga = weekFromLMP('2025-01-01', '2025-01-08');
     console.assert(ga.weeks === 1 && ga.days === 0, 'GA should be 1+0');
+    // Synthetic BBT
     const mkDay = d => `2025-01-${String(d).padStart(2,'0')}`;
     const tempLogs=[]; for(let d=1; d<=20; d++){ const base = d<=12 ? 36.50 : (d>=13 && d<=15 ? 36.80 : 36.70); tempLogs.push({date: mkDay(d), bbtC: base}); }
     const ovul = detectOvulationFromBBT(tempLogs);
