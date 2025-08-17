@@ -1,20 +1,11 @@
-:root {
-  color-scheme: light dark;
-
-  /* משתנים ל-safe areas באייפון */
-  --sat: env(safe-area-inset-top, 0px);
-  --sar: env(safe-area-inset-right, 0px);
-  --sab: env(safe-area-inset-bottom, 0px);
-  --sal: env(safe-area-inset-left, 0px);
-}
-
-* { box-sizing: border-box; }
+:root { color-scheme: light dark; }
+*, *::before, *::after { box-sizing: border-box; }
 html, body, #root { height: 100%; }
-
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   background: #f7f7f7;
+  padding-top: env(safe-area-inset-top);
 }
 
 /* כותרת עליונה: בלי height קבוע! משתמשים ב-min-height + padding לפי ה-notch */
