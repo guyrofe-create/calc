@@ -1,5 +1,5 @@
 /* SW: קאש לנכסים + ניווט SPA אופליין + טיפול JS network-first + עדכון גרסה */
-const CACHE = 'app-cache-v18';
+const CACHE = 'app-cache-v20';
 const CORE = [
   '/index.html',
   '/manifest.json',
