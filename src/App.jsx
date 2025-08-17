@@ -196,30 +196,68 @@ function listRangeDays(startISO, endISO){ const n = Math.max(0, daysBetweenISO(s
 
 function CalendarMonth(props){
   const y = props.year, m = props.month;
-  const dim = daysInMonth(y,m);
-  const fwd = firstWeekday(y,m);
+
+  // גיבוי לחישובי תאריכים במקרה ש-Safari ישן מחזיר NaN
+  function safeDaysInMonth(year, month){
+    let d = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    if (!Number.isFinite(d) || d <= 0) d = new Date(year, month, 0).getDate(); // local fallback
+    return d;
+  }
+  function safeFirstWeekday(year, month){
+    let wd = new Date(Date.UTC(year, month-1, 1)).getUTCDay();
+    if (!Number.isFinite(wd)) wd = new Date(year, month-1, 1).getDay(); // local fallback
+    return wd;
+  }
+
+  const dim = safeDaysInMonth(y, m);
+  const fwd = safeFirstWeekday(y, m);
+
+  // בונים את התאים
   const cells = [];
   for(let i=0;i<fwd;i++) cells.push(null);
-  for(let d=1; d<=dim; d++) cells.push(isoOfYMDay(y,m,d));
-  while(cells.length % 7 !== 0) cells.push(null);
+  for(let d=1; d<=dim; d++){
+    const iso = isoOfYMDay(y, m, d);
+    cells.push(iso);
+  }
+
   const today = toISO(new Date());
+  const col = '14.2857%'; // 7 עמודות
+  const baseCell = {
+    boxSizing:'border-box',
+    width: col,
+    minHeight: 58,
+    padding: 6,
+    borderRadius: 8,
+  };
+
   return (
     <div style={{ border:'1px solid #eee', borderRadius:12, overflow:'hidden' }}>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(7, 1fr)', background:'#fafafa', fontWeight:700, padding:6 }}>
-        {['א','ב','ג','ד','ה','ו','ש'].map((h,i)=> (<div key={i} style={{ textAlign:'center' }}>{h}</div>))}
+      {/* כותרת הימים — Flex במקום Grid */}
+      <div style={{ display:'flex', background:'#fafafa', fontWeight:700, padding:6 }}>
+        {['א','ב','ג','ד','ה','ו','ש'].map((h,i)=> (
+          <div key={i} style={{ width: col, textAlign:'center' }}>{h}</div>
+        ))}
       </div>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(7, 1fr)', gap:2, padding:4 }}>
-        {cells.map((iso,idx)=>{
-          if(!iso) return <div key={idx} style={{ minHeight:58 }} />;
-          const isToday = iso===today;
-          const isPeriod = props.periodSet && props.periodSet.has(iso);
+
+      {/* גוף הלוח — Flex wrap, נתמך בכל מקום */}
+      <div style={{ display:'flex', flexWrap:'wrap', gap:2, padding:4 }}>
+        {cells.map((iso, idx)=>{
+          if(!iso) {
+            return <div key={idx} style={{ ...baseCell, border:'1px solid transparent' }} />;
+          }
+          const isToday   = iso === today;
+          const isPeriod  = props.periodSet && props.periodSet.has(iso);
           const isFertile = props.fertileSet && props.fertileSet.has(iso);
-          const isOvul = props.ovulSet && props.ovulSet.has(iso);
-          const bg = isFertile ? '#fff3f7' : '#fff';
-          const border = isOvul ? '2px dashed #e91e63' : (isToday?'2px solid #111':'1px solid #eee');
+          const isOvul    = props.ovulSet && props.ovulSet.has(iso);
+          const bg     = isFertile ? '#fff3f7' : '#fff';
+          const border = isOvul ? '2px dashed #e91e63' : (isToday ? '2px solid #111' : '1px solid #eee');
+
           return (
-            <div key={idx} onClick={()=> props.onPick && props.onPick(iso)}
-                 style={{ minHeight:58, padding:6, border, borderRadius:8, background:bg, cursor:'pointer', display:'flex', flexDirection:'column', gap:4 }}>
+            <div
+              key={idx}
+              onClick={()=> props.onPick && props.onPick(iso)}
+              style={{ ...baseCell, background:bg, border, cursor:'pointer', display:'flex', flexDirection:'column', gap:4 }}
+            >
               <div style={{ fontWeight:700, alignSelf:'flex-start' }}>{Number(iso.slice(-2))}</div>
               <div style={{ display:'flex', gap:4, alignItems:'center' }}>
                 {isPeriod && <div title="וסת" style={{ width:8, height:8, borderRadius:4, background:'tomato' }} />}
