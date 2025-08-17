@@ -1,53 +1,38 @@
-// src/pwa-update.js
-export function setupPWAUpdate() {
-  if (!('serviceWorker' in navigator)) return;
-
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then((reg) => {
-      // אם יש כבר SW שממתין – הצג פס עדכון
+// הצגת בר עדכון כשיש SW חדש + רענון אוטומטי בלחיצה
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      // אם כבר מחכה גרסה חדשה
       if (reg.waiting) showUpdateBar(reg);
-
-      // מאזין לעדכונים חדשים
       reg.addEventListener('updatefound', () => {
-        const sw = reg.installing;
-        sw && sw.addEventListener('statechange', () => {
-          if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+        const nw = reg.installing;
+        nw?.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
             showUpdateBar(reg);
           }
         });
       });
-    });
-
-    // כש-SW חדש תופס שליטה – מרעננים את הדף
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      window.location.reload();
-    });
+    } catch (e) {
+      console.error('SW register failed:', e);
+    }
   });
 }
 
 function showUpdateBar(reg) {
-  if (document.getElementById('pwa-update-bar')) return;
+  // לא להציג פעמיים
+  if (document.getElementById('update-toast')) return;
 
   const bar = document.createElement('div');
-  bar.id = 'pwa-update-bar';
-  bar.dir = 'rtl';
-  bar.className = 'pwa-update-bar';
-  bar.innerHTML = `
-    <span class="pwa-update-text">גרסה חדשה זמינה</span>
-    <div class="pwa-update-actions">
-      <button class="pwa-update-btn" type="button">עדכון עכשיו</button>
-      <button class="pwa-dismiss-btn" type="button" aria-label="סגור">✕</button>
-    </div>
-  `;
-
-  bar.querySelector('.pwa-update-btn').addEventListener('click', () => {
+  bar.id = 'update-toast';
+  bar.textContent = 'גרסה חדשה זמינה • טען מחדש';
+  bar.style.cssText = `
+    position:fixed; inset:auto 16px 16px 16px; z-index:9999;
+    background:#111; color:#fff; padding:10px 14px; border-radius:10px;
+    text-align:center; cursor:pointer; font-weight:500;`;
+  bar.onclick = () => {
     reg.waiting?.postMessage({ type: 'SKIP_WAITING' });
-    bar.querySelector('.pwa-update-btn').disabled = true;
-  });
-
-  bar.querySelector('.pwa-dismiss-btn').addEventListener('click', () => {
-    bar.remove();
-  });
-
+    navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
+  };
   document.body.appendChild(bar);
 }
