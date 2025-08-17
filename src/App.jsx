@@ -1,6 +1,7 @@
 // Women’s Health Tracker – Web MVP (React, no external deps)
-import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { calculateFromInputs } from './calc.js';
+
+import React, { useEffect, useMemo, useState } from 'react';
+import { calculateFromInputs } from './calc.js'; // נשאר לוגית לעתיד
 
 // ---------- UI primitives ----------
 function Section(props) {
@@ -11,13 +12,22 @@ function Section(props) {
     </div>
   );
 }
+
 function Pill(props) {
   return (
-    <button onClick={props.onClick} style={{ ...styles.pill, background: props.active ? '#111' : '#eee', color: props.active ? '#fff' : '#111' }}>
+    <button
+      onClick={props.onClick}
+      style={{
+        ...styles.pill,
+        background: props.active ? '#111' : '#eee',
+        color: props.active ? '#fff' : '#111',
+      }}
+    >
       {props.label}
     </button>
   );
 }
+
 function Field(props) {
   return (
     <label style={styles.field} dir="rtl">
@@ -27,27 +37,56 @@ function Field(props) {
   );
 }
 
-/** Date input גלוי + כפתור 📅 לפתיחת בורר תאריך מקומי (כולל iOS) */
-function DateInputWithButton({ value, onPick }) {
-  const ref = useRef(null);
-  const open = () => {
+// === שדה תאריך משולב (הקלדה + בוחר תאריך מקומי) ===
+function DateField({ value, onChange, placeholder = 'dd.mm.yyyy או yyyy-mm-dd' }) {
+  const [text, setText] = React.useState(value || '');
+  React.useEffect(() => setText(value || ''), [value]);
+
+  const refDate = React.useRef(null);
+
+  const openPicker = () => {
+    const el = refDate.current;
+    if (!el) return;
     try {
-      if (ref.current?.showPicker) ref.current.showPicker();   // iOS 16.4+
-      else ref.current?.click();                               // fallback
+      if (typeof el.showPicker === 'function') el.showPicker();
+      else el.click();
+      el.focus();
     } catch {
-      ref.current?.focus();
+      el.click();
     }
   };
+
+  const onTextBlur = () => {
+    const iso = normalizeUserDate(text);
+    onChange?.(iso || text);
+    if (iso) setText(iso);
+  };
+
+  const onDateChange = (e) => {
+    const v = e.target.value; // yyyy-mm-dd
+    setText(v);
+    onChange?.(v);
+  };
+
   return (
-    <div style={{ display:'flex', gap:8, alignItems:'center', flex:1 }}>
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1 }}>
       <input
-        type="date"
-        ref={ref}
-        value={typeof value === 'string' && isISODate(value) ? value : ''}
-        onChange={(e)=> onPick?.(e.target.value)}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={onTextBlur}
+        placeholder={placeholder}
+        inputMode="numeric"
         style={styles.input}
       />
-      <button type="button" onClick={open} title="בחר תאריך" aria-label="בחר תאריך" style={styles.iconBtn}>📅</button>
+      <button type="button" onClick={openPicker} aria-label="בחר תאריך" title="בחר תאריך" style={styles.iconBtn}>
+        📅
+      </button>
+      <input
+        ref={refDate}
+        type="date"
+        onChange={onDateChange}
+        style={{ position: 'absolute', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}
+      />
     </div>
   );
 }
@@ -58,7 +97,7 @@ var styles = {
   section: { margin: '10px 0', padding: 12, background: '#fff', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.04)' },
   input: { background: '#eee', borderRadius: 10, padding: 10, border: '1px solid #ddd' },
   button: { background: '#111', color: '#fff', padding: '10px 14px', borderRadius: 12, border: 'none', cursor: 'pointer', fontWeight: 700 },
-  iconBtn: { background:'#eee', border:'1px solid #ddd', borderRadius:10, padding:'10px 12px', cursor:'pointer' },
+  iconBtn: { background: '#eee', border: '1px solid #ddd', borderRadius: 10, padding: '10px 12px', cursor: 'pointer' },
   smallDanger: { background: 'tomato', color: '#fff', border: 'none', borderRadius: 10, padding: '4px 8px', cursor: 'pointer' },
   row: { display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', padding: '6px 0' },
   pill: { padding: '8px 14px', borderRadius: 999, border: 'none', cursor: 'pointer', fontWeight: 600 },
@@ -66,7 +105,7 @@ var styles = {
   tipBox: { background: '#f1f1f1', borderRadius: 10, padding: 10, margin: '4px 0' }
 };
 
-// ---------- Domain logic ----------
+// ---------- Domain logic (no deps) ----------
 function toISO(d) {
   const z = n => String(n).padStart(2,'0');
   return `${d.getUTCFullYear()}-${z(d.getUTCMonth() + 1)}-${z(d.getUTCDate())}`;
@@ -173,71 +212,38 @@ function buildPregnancyPlan(lmpISO, checks) {
 function ymFromISO(iso){ const [y,m] = iso.split('-').map(Number); return {year:y, month:m}; }
 function isoOfYMDay(year, month, day){ const d = new Date(Date.UTC(year, month-1, day)); return toISO(d); }
 function daysInMonth(year, month){ return new Date(Date.UTC(year, month, 0)).getUTCDate(); }
-function firstWeekday(year, month){ return new Date(Date.UTC(year, month-1, 1)).getUTCDay(); }
+function firstWeekday(year, month){ return new Date(Date.UTC(year, month-1, 1)).getUTCDay(); } // 0=Sun
 function shiftMonth(year, month, delta){ const d = new Date(Date.UTC(year, month-1, 1)); d.setUTCMonth(d.getUTCMonth()+delta); return {year:d.getUTCFullYear(), month:d.getUTCMonth()+1}; }
 function listRangeDays(startISO, endISO){ const n = Math.max(0, daysBetweenISO(startISO, endISO)); const arr=[]; for(let i=0;i<=n;i++){ arr.push(addDaysISO(startISO,i)); } return arr; }
 
-// === CalendarMonth – גרסת Flex יציבה לכל דפדפנים ===
 function CalendarMonth(props){
   const y = props.year, m = props.month;
-
-  function safeDaysInMonth(year, month){
-    let d = new Date(Date.UTC(year, month, 0)).getUTCDate();
-    if (!Number.isFinite(d) || d <= 0) d = new Date(year, month, 0).getDate();
-    return d;
-  }
-  function safeFirstWeekday(year, month){
-    let wd = new Date(Date.UTC(year, month-1, 1)).getUTCDay();
-    if (!Number.isFinite(wd)) wd = new Date(year, month-1, 1).getDay();
-    return wd;
-  }
-
-  const dim = safeDaysInMonth(y, m);
-  const fwd = safeFirstWeekday(y, m);
+  const dim = daysInMonth(y,m);
+  const fwd = firstWeekday(y,m);
+  const today = toISO(new Date()); // <-- שונה: ללא סוגר מיותר
 
   const cells = [];
   for(let i=0;i<fwd;i++) cells.push(null);
-  for(let d=1; d<=dim; d++){
-    const iso = isoOfYMDay(y, m, d);
-    cells.push(iso);
-  }
-
-  const today = toISO(new Date());
-  const col = '14.2857%';
-  const baseCell = {
-    boxSizing:'border-box',
-    width: col,
-    minHeight: 58,
-    padding: 6,
-    borderRadius: 8,
-  };
+  for(let d=1; d<=dim; d++) cells.push(isoOfYMDay(y,m,d));
+  while(cells.length % 7 !== 0) cells.push(null);
 
   return (
     <div style={{ border:'1px solid #eee', borderRadius:12, overflow:'hidden' }}>
-      <div style={{ display:'flex', background:'#fafafa', fontWeight:700, padding:6 }}>
-        {['א','ב','ג','ד','ה','ו','ש'].map((h,i)=> (
-          <div key={i} style={{ width: col, textAlign:'center' }}>{h}</div>
-        ))}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(7, 1fr)', background:'#fafafa', fontWeight:700, padding:6 }}>
+        {['א','ב','ג','ד','ה','ו','ש'].map((h,i)=> (<div key={i} style={{ textAlign:'center' }}>{h}</div>))}
       </div>
-
-      <div style={{ display:'flex', flexWrap:'wrap', gap:2, padding:4 }}>
-        {cells.map((iso, idx)=>{
-          if(!iso) {
-            return <div key={idx} style={{ ...baseCell, border:'1px solid transparent' }} />;
-          }
-          const isToday   = iso === today;
-          const isPeriod  = props.periodSet && props.periodSet.has(iso);
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(7, 1fr)', gap:2, padding:4 }}>
+        {cells.map((iso,idx)=>{
+          if(!iso) return <div key={idx} style={{ minHeight:58 }} />;
+          const isToday = iso===today;
+          const isPeriod = props.periodSet && props.periodSet.has(iso);
           const isFertile = props.fertileSet && props.fertileSet.has(iso);
-          const isOvul    = props.ovulSet && props.ovulSet.has(iso);
-          const bg     = isFertile ? '#fff3f7' : '#fff';
-          const border = isOvul ? '2px dashed #e91e63' : (isToday ? '2px solid #111' : '1px solid #eee');
-
+          const isOvul = props.ovulSet && props.ovulSet.has(iso);
+          const bg = isFertile ? '#fff3f7' : '#fff';
+          const border = isOvul ? '2px dashed #e91e63' : (isToday?'2px solid #111':'1px solid #eee');
           return (
-            <div
-              key={idx}
-              onClick={()=> props.onPick && props.onPick(iso)}
-              style={{ ...baseCell, background:bg, border, cursor:'pointer', display:'flex', flexDirection:'column', gap:4 }}
-            >
+            <div key={idx} onClick={()=> props.onPick && props.onPick(iso)}
+                 style={{ minHeight:58, padding:6, border, borderRadius:8, background:bg, cursor:'pointer', display:'flex', flexDirection:'column', gap:4 }}>
               <div style={{ fontWeight:700, alignSelf:'flex-start' }}>{Number(iso.slice(-2))}</div>
               <div style={{ display:'flex', gap:4, alignItems:'center' }}>
                 {isPeriod && <div title="וסת" style={{ width:8, height:8, borderRadius:4, background:'tomato' }} />}
@@ -340,6 +346,7 @@ export default function App() {
   const pregPlan = useMemo(()=> isISODate(lmp) ? buildPregnancyPlan(lmp, pregChecks) : null, [lmp, pregChecks]);
   useEffect(()=>{ try { localStorage.setItem(K_PREG, JSON.stringify(pregChecks)); } catch {} },[pregChecks]);
 
+  // Notifications
   useEffect(()=>{ dailyCheckNotifications(); }, [settings, lmp, logs, notifEnabled, detectedOvul]);
   useEffect(()=>{ const id = window.setInterval(()=> dailyCheckNotifications(), 60*60*1000); return ()=> clearInterval(id); }, [settings, lmp, logs, notifEnabled, detectedOvul, pregChecks]);
   useEffect(()=>{ if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistration().then(r=> setSwReady(!!r)); } },[]);
@@ -347,39 +354,24 @@ export default function App() {
   function requestNotifications(){
     try{
       if (!('Notification' in window)) { alert('הדפדפן לא תומך בהתראות מערכת. אפעיל התראות בתוך האפליקציה.'); setNotifEnabled(true); return; }
-      if (!window.isSecureContext) { alert('התראות מערכת דורשות https. במצב הדגמה אראה חלון קופץ.'); setNotifEnabled(true); return; }
+      if (!window.isSecureContext) { alert('התראות מערכת דורשות אתר מאובטח (https). במצב הדגמה אראה חלון קופץ במקום.'); setNotifEnabled(true); return; }
       if (Notification.permission==='granted'){ localStorage.setItem(K_NOTIF,'1'); setNotifEnabled(true); notify('התראות הופעלו'); return; }
-      if (Notification.permission==='denied'){ alert('ההרשאה חסומה. אפשרו התראות בהגדרות האתר.'); setNotifEnabled(false); return; }
+      if (Notification.permission==='denied'){ alert('ההרשאה חסומה. פתחי את הגדרות האתר ואפשרי התראות.'); setNotifEnabled(false); return; }
       const req = Notification.requestPermission;
       if (typeof req === 'function'){
-        const p = req.call(Notification);
-        if (p && typeof p.then==='function'){
-          p.then(x=>{ if(x==='granted'){ localStorage.setItem(K_NOTIF,'1'); setNotifEnabled(true); notify('התראות הופעלו'); } else { alert('לא אושרו התראות.'); } });
+        const maybePromise = req.call(Notification);
+        if (maybePromise && typeof maybePromise.then==='function'){
+          maybePromise.then(p=>{ if(p==='granted'){ localStorage.setItem(K_NOTIF,'1'); setNotifEnabled(true); notify('התראות הופעלו'); } else { alert('לא אושרו התראות.'); } });
         } else {
-          req(function(x){ if(x==='granted'){ localStorage.setItem(K_NOTIF,'1'); setNotifEnabled(true); notify('התראות הופעלו'); } else { alert('לא אושרו התראות.'); } });
+          req(function(p){ if(p==='granted'){ localStorage.setItem(K_NOTIF,'1'); setNotifEnabled(true); notify('התראות הופעלו'); } else { alert('לא אושרו התראות.'); } });
         }
       } else {
-        alert('לא ניתן לבקש הרשאה בדפדפן זה.'); setNotifEnabled(true);
+        alert('לא ניתן לבקש הרשאה בדפדפן זה. אציג חלון קופץ במקום.'); setNotifEnabled(true);
       }
     } catch { alert('כשל בבקשת הרשאה'); }
   }
   function notify(msg){ if(!notifEnabled) return; try { if ('Notification' in window && Notification.permission==='granted') new Notification(msg); else alert(msg); } catch { try{ alert(msg);}catch{}} }
-  function dailyCheckNotifications(){ try{ const today=toISO(new Date()); const last=localStorage.getItem(K_LAST_DAY); if (last===today && !detectedOvul) return; if (isISODate(settings.lastPeriodStart)){ const fw = calcFertileWindow(settings.lastPeriodStart, Number(settings.avgCycleLength)||28); if (today===fw.start) notify('חלון פוריות מתחיל היום'); } if (detectedOvul){ const lastBbt=localStorage.getItem(K_BBT); if (lastBbt!==detectedOvul){ notify('זוהתה עליית BBT סביב: ' + detectedOvul); localStorage.setItem(K_BBT, detectedOvul); } } if (isISODate(lmp)){ const ga=weekFromLMP(lmp); const lastW=Number(localStorage.getItem(K_WEEK)||'-1'); if (ga.weeks!==lastW){ notify('הגעת לשבוע ' + ga.weeks + ' בהריון'); const remind = (pregChecks||[]).find(i => ga.weeks >= (i.startWeek||0) && ga.weeks <= (i.endWeek||i.startWeek||0)); if (remind && remind.title) notify('תזכורת: ' + remind.title); localStorage.setItem(K_WEEK, String(ga.weeks)); } } localStorage.setItem(K_LAST_DAY, today);} catch{} }
-
-  async function hardRefresh(){
-    try{
-      if ('serviceWorker' in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map(r=>r.unregister()));
-      }
-      if (window.caches) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map(k=> caches.delete(k)));
-      }
-    } finally {
-      location.replace(window.location.pathname + '?v=' + Date.now());
-    }
-  }
+  function dailyCheckNotifications(){ try{ const today=toISO(new Date()); const last=localStorage.getItem(K_LAST_DAY); if (last===today && !detectedOvul) return; if (isISODate(settings.lastPeriodStart)){ const fw = calcFertileWindow(settings.lastPeriodStart, Number(settings.avgCycleLength)||28); if (today===fw.start) notify('חלון פוריות מתחיל היום'); } if (detectedOvul){ const lastBbt=localStorage.getItem(K_BBT); if (lastBbt!==detectedOvul){ notify('זוהתה עליית BBT שמרמזת על ביוץ סביב: ' + detectedOvul); localStorage.setItem(K_BBT, detectedOvul); } } if (isISODate(lmp)){ const ga=weekFromLMP(lmp); const lastW=Number(localStorage.getItem(K_WEEK)||'-1'); if (ga.weeks!==lastW){ notify('הגעת לשבוע ' + ga.weeks + ' בהריון'); const remind = (pregChecks||[]).find(i => ga.weeks >= (i.startWeek||0) && ga.weeks <= (i.endWeek||i.startWeek||0)); if (remind && remind.title) notify('תזכורת: ' + remind.title); localStorage.setItem(K_WEEK, String(ga.weeks)); } } localStorage.setItem(K_LAST_DAY, today);} catch{} }
 
   function ensureServiceWorker(){
     if (!('serviceWorker' in navigator)) { alert('הדפדפן לא תומך ב-Service Worker'); return; }
@@ -391,10 +383,18 @@ self.addEventListener('message', e=>{ const d=e.data||{}; if(d.type==='SHOW'){ s
       navigator.serviceWorker.register(url).then(reg=>{ setSwReady(true); try{ if (Notification.permission==='granted') reg.showNotification('התראות רקע הופעלו'); }catch{} }).catch(()=> alert('כשל ברישום Service Worker'));
     }catch{ alert('כשל בהפעלת רקע'); }
   }
+
   function ensureManifest(){
     try{
       const icon = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wn8X3IAAAAASUVORK5CYII=';
-      const manifest = { name: 'אפליקציה לנשים', short_name: 'מעקב נשים', lang:'he', dir:'rtl', start_url: '.', display: 'standalone', background_color:'#ffffff', theme_color:'#111111', icons: [{ src: 'data:image/png;base64,'+icon, sizes: '192x192', type:'image/png' }, { src: 'data:image/png;base64,'+icon, sizes: '512x512', type:'image/png' }] };
+      const manifest = {
+        name: 'אפליקציה לנשים', short_name: 'מעקב נשים', lang:'he', dir:'rtl',
+        start_url: '.', display: 'standalone', background_color:'#ffffff', theme_color:'#111111',
+        icons: [
+          { src: 'data:image/png;base64,'+icon, sizes: '192x192', type:'image/png' },
+          { src: 'data:image/png;base64,'+icon, sizes: '512x512', type:'image/png' }
+        ]
+      };
       const url = URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'}));
       let link = document.querySelector('link[rel="manifest"]');
       if (!link) { link = document.createElement('link'); link.setAttribute('rel','manifest'); document.head.appendChild(link); }
@@ -402,14 +402,16 @@ self.addEventListener('message', e=>{ const d=e.data||{}; if(d.type==='SHOW'){ s
       return true;
     } catch { alert('כשל ביצירת manifest'); return false; }
   }
+
   function installApp(){
     try{
       ensureManifest(); ensureServiceWorker();
-      if (!a2hsReady || !installEvt){ alert('אם לא נפתח דיאלוג – הוסיפי ממסך השיתוף "הוסף למסך הבית"'); return; }
+      if (!a2hsReady || !installEvt){ alert('אם לא נפתח דיאלוג – נסי דרך תפריט הדפדפן "הוסף למסך הבית"'); return; }
       installEvt.prompt();
       installEvt.userChoice.then(choice=>{ if (choice && choice.outcome==='accepted') notify('האפליקציה נוספה למסך הבית'); setA2hsReady(false); setInstallEvt(null); });
     } catch { alert('כשל בהתקנה'); }
   }
+
   function exportCSV(){
     try {
       const NL = String.fromCharCode(10);
@@ -448,18 +450,10 @@ self.addEventListener('message', e=>{ const d=e.data||{}; if(d.type==='SHOW'){ s
                 <span>ימים</span>
               </Field>
               <Field label="וסת אחרונה">
-                <div style={{ display:'flex', gap:8, alignItems:'center', flex:1 }}>
-                  <input
-                    placeholder="yyyy-mm-dd או dd.mm.yyyy"
-                    value={settings.lastPeriodStart||''}
-                    onChange={e=>{ const iso=normalizeUserDate(e.target.value); setSettings(s=>({...s, lastPeriodStart: iso || e.target.value})); }}
-                    style={styles.input}
-                  />
-                  <DateInputWithButton
-                    value={settings.lastPeriodStart||''}
-                    onPick={(iso)=> setSettings(s=>({...s, lastPeriodStart: iso}))}
-                  />
-                </div>
+                <DateField
+                  value={settings.lastPeriodStart || ''}
+                  onChange={(v) => setSettings((s) => ({ ...s, lastPeriodStart: normalizeUserDate(v) || v }))}
+                />
               </Field>
             </div>
           </Section>
@@ -478,7 +472,7 @@ self.addEventListener('message', e=>{ const d=e.data||{}; if(d.type==='SHOW'){ s
 
           <Section title="רישום יומי">
             <div style={{ display:'grid', gap:8 }}>
-              <input placeholder="yyyy-mm-dd או dd.mm.yyyy" value={dateInput} onChange={e=>setDateInput(e.target.value)} style={styles.input} />
+              <DateField value={dateInput} onChange={setDateInput} />
               <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
                 {['יבש','דביק','קרמי','מימי','חלבון-ביצה'].map(m=> (
                   <Pill key={m} label={m} active={mucus===m} onClick={()=>setMucus(m)} />
@@ -516,8 +510,12 @@ self.addEventListener('message', e=>{ const d=e.data||{}; if(d.type==='SHOW'){ s
               <button style={styles.button} onClick={requestNotifications}>{notifEnabled? 'התראות פועלות' : 'הפעל התראות'}</button>
               <button style={styles.button} onClick={ensureServiceWorker}>{swReady? 'רקע (PWA) פעיל' : 'הפעל רקע (PWA)'}</button>
               <button style={styles.button} onClick={installApp}>{a2hsReady? 'הוסף למסך הבית' : 'מסך הבית (תפריט הדפדפן)'}</button>
-              <button style={styles.button} onClick={()=> notify('בדיקת התראה — אם לא הופיעה התראת מערכת, תראי חלון קופץ כאן.')}>בדיקת התראה</button>
-              <button style={styles.button} onClick={hardRefresh}>רענון קש (מחיקת עדכונים ישנים)</button>
+              <button style={styles.button} onClick={()=> notify('בדיקת התראה — אם לא הופיעה התראת מערכת, תראי חלון קופץ כאן.')}>
+                בדיקת התראה
+              </button>
+              <button style={styles.button} onClick={()=>{ try{ window.open(window.location.href,'_blank'); }catch{ alert('פתחי דרך תפריט הדפדפן בחלון חדש'); } }}>
+                פתח בחלון חדש
+              </button>
             </div>
             <div style={{ fontSize:12, color:'#666', marginTop:6 }}>
               {'סטטוס התראות: ' + (('Notification' in window) ? (window.isSecureContext ? ('הרשאה: ' + Notification.permission) : 'אין https – יוצגו חלונות קופצים') : 'לא נתמך בדפדפן')}
@@ -531,18 +529,10 @@ self.addEventListener('message', e=>{ const d=e.data||{}; if(d.type==='SHOW'){ s
           <Section title="מחשבון ביוץ">
             <div style={{ display:'grid', gap:8 }}>
               <Field label="וסת אחרונה">
-                <div style={{ display:'flex', gap:8, alignItems:'center', flex:1 }}>
-                  <input
-                    placeholder="yyyy-mm-dd או dd.mm.yyyy"
-                    value={settings.lastPeriodStart||''}
-                    onChange={e=>{ const iso=normalizeUserDate(e.target.value); setSettings(s=>({...s, lastPeriodStart: iso || e.target.value})); }}
-                    style={styles.input}
-                  />
-                  <DateInputWithButton
-                    value={settings.lastPeriodStart||''}
-                    onPick={(iso)=> setSettings(s=>({...s, lastPeriodStart: iso}))}
-                  />
-                </div>
+                <DateField
+                  value={settings.lastPeriodStart || ''}
+                  onChange={(v) => setSettings((s) => ({ ...s, lastPeriodStart: normalizeUserDate(v) || v }))}
+                />
               </Field>
               <Field label="אורך מחזור">
                 <input type="number" value={String(settings.avgCycleLength)} onChange={e=>setSettings(s=>({...s, avgCycleLength:Number(e.target.value||0)}))} style={styles.input} />
@@ -564,15 +554,7 @@ self.addEventListener('message', e=>{ const d=e.data||{}; if(d.type==='SHOW'){ s
         <div>
           <Section title="תכנית הריון אישית">
             <div style={{ display:'grid', gap:8 }}>
-              <div style={{ display:'flex', gap:8, alignItems:'center', flex:1 }}>
-                <input
-                  placeholder="yyyy-mm-dd או dd.mm.yyyy"
-                  value={lmp}
-                  onChange={e=>{ const iso=normalizeUserDate(e.target.value); setLmp(iso || e.target.value); }}
-                  style={styles.input}
-                />
-                <DateInputWithButton value={lmp} onPick={(iso)=> setLmp(iso)} />
-              </div>
+              <DateField value={lmp} onChange={(v) => setLmp(normalizeUserDate(v) || v)} />
               {isISODate(lmp) ? (()=>{ const plan=pregPlan; return (
                 <div style={{ display:'grid', gap:6 }}>
                   <div>{'תאריך לידה משוער (EDD): ' + plan.edd}</div>
@@ -599,7 +581,7 @@ self.addEventListener('message', e=>{ const d=e.data||{}; if(d.type==='SHOW'){ s
 }
 
 // ---------- Lightweight tests (console) ----------
-(function runTests(){
+;(function runTests(){
   try {
     console.assert(calcEDD('2025-01-01') === '2025-10-08', 'EDD should be 2025-10-08');
     const fw = calcFertileWindow('2025-01-01', 28);
