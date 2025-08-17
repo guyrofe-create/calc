@@ -34,5 +34,6 @@ function showUpdateBar(reg) {
     reg.waiting?.postMessage({ type: 'SKIP_WAITING' });
     navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
   };
+  reg.waiting?.postMessage({ type: 'SKIP_WAITING' });
   document.body.appendChild(bar);
 }
