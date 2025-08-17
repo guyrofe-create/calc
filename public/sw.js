@@ -1,5 +1,5 @@
-/* SW בסיסי: קאש לנכסים + ניווט SPA אופליין + עדכון גרסה עם SKIP_WAITING */
-const CACHE = 'app-cache-v8';
+/* SW: קאש לנכסים + ניווט SPA אופליין + טיפול JS network-first + עדכון גרסה */
+const CACHE = 'app-cache-v4';
 const CORE = [
   '/index.html',
   '/manifest.json',
@@ -8,7 +8,6 @@ const CORE = [
   '/assets/gr-logo.jpg',
 ];
 
-// התקנה – קאש ל-CORE
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
@@ -17,7 +16,6 @@ self.addEventListener('install', (event) => {
   })());
 });
 
-// אקטיבציה – ניקוי קאש ישן ו-claim
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
@@ -26,7 +24,6 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
-// ניווטי SPA: רשת תחילה, ואם נכשלה – index.html מהקאש
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -40,23 +37,38 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // ← חשוב: סקריפטים תמיד network-first כדי שלא "יחסרו" נכסי build
+  if (req.destination === 'script') {
+    event.respondWith(networkFirstAsset(req));
+    return;
+  }
+
   const dest = req.destination;
-  if (['style', 'script', 'image', 'font'].includes(dest) || req.url.includes('/assets/')) {
+  if (['style', 'image', 'font'].includes(dest) || req.url.includes('/assets/')) {
     event.respondWith(cacheFirst(req));
     return;
   }
 
-  // ברירת מחדל: רשת ואם נכשלה – קאש
   event.respondWith(fetch(req).catch(() => caches.match(req)));
 });
 
 async function networkFirstNavigation(req) {
   try {
-    const fresh = await fetch(req);
-    return fresh;
+    return await fetch(req);
   } catch {
     const cache = await caches.open(CACHE);
     return (await cache.match('/index.html')) || Response.error();
+  }
+}
+
+async function networkFirstAsset(req) {
+  try {
+    const fresh = await fetch(req);
+    const cache = await caches.open(CACHE);
+    if (fresh && fresh.ok) cache.put(req, fresh.clone());
+    return fresh;
+  } catch {
+    return (await caches.match(req)) || Response.error();
   }
 }
 
@@ -64,7 +76,6 @@ async function cacheFirst(req) {
   const cache = await caches.open(CACHE);
   const hit = await cache.match(req);
   if (hit) {
-    // רענון ברקע
     fetch(req).then((r) => r.ok && cache.put(req, r.clone())).catch(() => {});
     return hit;
   }
@@ -73,7 +84,6 @@ async function cacheFirst(req) {
   return resp;
 }
 
-// הודעות/עדכון מידי
 self.addEventListener('message', (e) => {
   const d = e.data || {};
   if (d.type === 'SHOW') {
