@@ -1,11 +1,12 @@
-// src/main.jsx (מלא)
+// src/main.jsx
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App.jsx';
-import './index.css';
 
+import './index.css';
+import App from './App.jsx';
+
+// הייבוא הנכון (שם קובץ מדויק):
 import { setupPWAUpdate } from './pwa-update.js';
-import { setupInstallPrompt } from './install-prompt.js'; // אופציונלי לכפתור "התקן לאפליקציה"
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -13,8 +14,5 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>
 );
 
-// מפעיל פס עדכון (גרסה חדשה)
+// הפעלת מנגנון עדכון ה-PWA
 setupPWAUpdate();
-
-// כפתור "התקן לאפליקציה" (אנדרואיד/דסקטופ; ב-iOS אין beforeinstallprompt)
-setupInstallPrompt();
