@@ -4,7 +4,7 @@
 // CSV export, and basic at-app-open notifications.
 // Ovulation per spec: 14 days BEFORE next expected period; fertile window = −5..+1 days.
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { calculateFromInputs } from './calc.js';
 
 // ---------- UI primitives ----------
@@ -24,6 +24,32 @@ function Pill(props) {
     </button>
   );
 }
+function DatePickerButton({ value, onPick }) {
+  const ref = useRef(null);
+  const open = () => {
+    try {
+      if (ref.current?.showPicker) ref.current.showPicker();   // iOS Safari 16.4+
+      else ref.current?.click();                               // fallback
+    } catch {
+      ref.current?.focus();
+    }
+  };
+  return (
+    <>
+      {/* input date חבוי שמחזיק ערך ISO ומזין ל-onPick */}
+      <input
+        type="date"
+        ref={ref}
+        value={typeof value === 'string' && isISODate(value) ? value : ''}
+        onChange={(e)=> onPick?.(e.target.value)}
+        style={{ position:'absolute', opacity:0, pointerEvents:'none', width:0, height:0 }}
+        aria-hidden="true"
+        tabIndex={-1}
+      />
+      <button type="button" onClick={open} title="בחר תאריך" aria-label="בחר תאריך" style={styles.iconBtn}>📅</button>
+    </>
+  );
+}
 
 function Field(props) {
   return (
@@ -40,7 +66,7 @@ var styles = {
   section: { margin: '10px 0', padding: 12, background: '#fff', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.04)' },
   input: { background: '#eee', borderRadius: 10, padding: 10, border: '1px solid #ddd' },
   button: { background: '#111', color: '#fff', padding: '10px 14px', borderRadius: 12, border: 'none', cursor: 'pointer', fontWeight: 700 },
-  smallDanger: { background: 'tomato', color: '#fff', border: 'none', borderRadius: 10, padding: '4px 8px', cursor: 'pointer' },
+  iconBtn: { background:'#eee', border:'1px solid #ddd', borderRadius:10, padding:'10px 12px', cursor:'pointer' },  smallDanger: { background: 'tomato', color: '#fff', border: 'none', borderRadius: 10, padding: '4px 8px', cursor: 'pointer' },
   row: { display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', padding: '6px 0' },
   pill: { padding: '8px 14px', borderRadius: 999, border: 'none', cursor: 'pointer', fontWeight: 600 },
   field: { display: 'flex', gap: 8, alignItems: 'center', margin: '4px 0' },
